@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mes congélos</title>
+<meta name="theme-color" content="#1f5f8b">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eef3f6;--card:#fff;--ink:#12303b;--mut:#5d7480;--line:#d5e0e6;--acc:#1f5f8b;--onacc:#fff;--warn:#b86a0c;--bad:#b3261e;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1c22;--card:#172a33;--ink:#e6f0f4;--mut:#93aab5;--line:#264049;--acc:#6bb6e6;--onacc:#0f1c22;--warn:#e8a64a;--bad:#f2867f}}
+:root[data-theme="dark"]{--bg:#0f1c22;--card:#172a33;--ink:#e6f0f4;--mut:#93aab5;--line:#264049;--acc:#6bb6e6;--onacc:#0f1c22;--warn:#e8a64a;--bad:#f2867f}
+:root{--s1:#2a78d6;--s2:#eb6834;--s3:#1baf7a;--s4:#eda100;--s5:#e87ba4;--s6:#008300;--s7:#6250d6;--s8:#898781}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--s1:#3987e5;--s2:#d95926;--s3:#199e70;--s4:#c98500;--s5:#d55181;--s6:#008300;--s7:#9085e9}}
+:root[data-theme="dark"]{--s1:#3987e5;--s2:#d95926;--s3:#199e70;--s4:#c98500;--s5:#d55181;--s6:#008300;--s7:#9085e9}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 "Bricolage Grotesque",system-ui,-apple-system,Segoe UI,sans-serif;padding-bottom:90px}
+header{padding:16px 16px 8px}
+h1{font-size:26px;margin:0 0 10px;font-weight:700}
+.sub{color:var(--mut);font-size:14px;margin:0 0 10px}
+input,select,button{font:inherit;color:inherit}
+input,select{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+.chips{display:flex;gap:8px;margin-top:10px;overflow-x:auto}
+.chip{border:1px solid var(--line);background:var(--card);border-radius:20px;padding:8px 14px;white-space:nowrap;cursor:pointer}
+.chip.on{background:var(--acc);color:var(--onacc);border-color:var(--acc)}
+main{padding:8px 16px}
+.zone{margin:18px 0 6px;font-weight:700;color:var(--mut);font-size:14px}
+.item{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:8px;display:flex;gap:10px;align-items:center}
+.item.hit{outline:3px solid var(--acc)}
+.info{flex:1;min-width:0}
+.name{font-weight:700;overflow-wrap:anywhere}
+.meta{font-size:13px;color:var(--mut)}
+.tag{font-size:12px;border-radius:6px;padding:1px 6px;border:1px solid currentColor;margin-left:4px}
+.tag.w{color:var(--warn)}.tag.b{color:var(--bad)}
+.qty{display:flex;align-items:center;gap:6px}
+.qty button{width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--bg);font-size:20px;cursor:pointer}
+.qty span{min-width:46px;text-align:center;font-weight:700}
+.bar{position:fixed;left:0;right:0;bottom:0;padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));background:var(--bg);border-top:1px solid var(--line);display:flex;gap:8px}
+.btn{flex:1;padding:14px;border-radius:12px;border:1px solid var(--acc);background:var(--card);color:var(--acc);font-weight:700;cursor:pointer}
+.btn.p{background:var(--acc);color:var(--onacc)}
+.empty{text-align:center;color:var(--mut);padding:40px 10px}
+dialog{border:none;border-radius:16px;background:var(--card);color:var(--ink);width:min(94vw,440px);padding:16px}
+dialog::backdrop{background:rgba(0,0,0,.5)}
+label{display:block;font-size:13px;color:var(--mut);margin:10px 0 4px}
+.row{display:flex;gap:8px}.row>*{flex:1}
+#cam{width:100%;border-radius:12px;background:#000;min-height:200px}
+.toast{position:fixed;left:16px;right:16px;bottom:90px;background:var(--ink);color:var(--bg);padding:12px;border-radius:10px;text-align:center}
+.tabs{display:flex;gap:6px;margin:0 0 12px;overflow-x:auto}
+.tab{flex:none;padding:10px 14px;border-radius:10px;border:1px solid var(--line);background:var(--card);font-weight:700;font-size:14px;white-space:nowrap;cursor:pointer}
+.tab.on{background:var(--acc);color:var(--onacc);border-color:var(--acc)}
+.stock{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:start}
+.donut svg{width:100%;height:auto;display:block}
+.seg{cursor:pointer;transition:stroke-width .15s}
+.cpc{font-size:19px;font-weight:700;fill:var(--ink)}
+.cnm{font-size:8.5px;fill:var(--mut)}
+.lg{display:flex;align-items:center;gap:8px;width:100%;padding:8px 6px;border:1px solid transparent;border-radius:8px;background:none;text-align:left;font-size:14px;cursor:pointer}
+.lg.on{background:var(--card);border-color:var(--line)}
+.dot{width:10px;height:10px;border-radius:50%;flex:none}
+.lg .pc{margin-left:auto;color:var(--mut)}
+.detail h3{font-size:15px;margin:4px 0 8px}
+.drow{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-bottom:6px;cursor:pointer}
+.dtop{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.dtop .name{font-size:14px;min-width:0}
+.dq{font-size:13px;font-weight:700;white-space:nowrap}
+.drow .meta{font-size:12px}
+.manage{display:flex;gap:16px;margin-top:6px}
+.manage .link{padding:6px 0;margin:0}
+.link{background:none;border:none;color:var(--mut);text-decoration:underline;padding:8px;cursor:pointer}
+</style>
+</head>
+<body>
+<header>
+  <h1>Mes congélos</h1>
+  <div class="tabs" id="tabs"></div>
+  <p class="sub" id="sum"></p>
+  <input id="q" type="search" placeholder="Chercher un produit">
+  <div class="chips" id="chips"></div>
+  <div class="manage" id="manage"></div>
+</header>
+<main id="list"></main>
+<div class="bar">
+  <button class="btn" id="bScan">Scanner</button>
+  <button class="btn p" id="bAdd">Ajouter</button>
+  <button class="btn" id="bSave">Sauvegarde</button>
+</div>
+
+<dialog id="dAdd">
+  <b id="dTitle">Ajouter un produit</b>
+  <label>Code-barres (scanne ou tape)</label>
+  <input id="fCode" inputmode="numeric" autocomplete="off" placeholder="Optionnel">
+  <label>Catégorie</label>
+  <select id="fCat"></select>
+  <label>Produit</label>
+  <input id="fName" autocomplete="off" placeholder="Ex. Haricots verts">
+  <div class="row">
+    <div><label>Congélateur</label><select id="fBahut"></select></div>
+    <div><label>Emplacement</label><input id="fSlot" placeholder="Ex. panier haut"></div>
+  </div>
+  <div class="row">
+    <div><label>Quantité</label><input id="fQty" type="number" inputmode="decimal" min="0" step="any" value="1"></div>
+    <div><label>Unité</label><select id="fUnit"><option>paquet</option><option>portion</option><option>g</option><option>kg</option></select></div>
+  </div>
+  <label>À consommer avant (optionnel)</label>
+  <input id="fDlc" type="date">
+  <div class="row" style="margin-top:14px">
+    <button class="btn" id="fCancel">Annuler</button>
+    <button class="btn p" id="fOk">Enregistrer</button>
+  </div>
+</dialog>
+
+<dialog id="dDel">
+  <b id="delTitle">Supprimer ce congélateur</b>
+  <p class="sub" id="delMsg" style="margin-top:10px"></p>
+  <div id="delMoveBox">
+    <label>Que faire des produits ?</label>
+    <select id="delMove"></select>
+  </div>
+  <div class="row" style="margin-top:14px">
+    <button class="btn" id="delCancel">Annuler</button>
+    <button class="btn p" id="delOk">Supprimer</button>
+  </div>
+</dialog>
+
+<dialog id="dBahut">
+  <b id="bhTitle">Nouveau congélateur</b>
+  <label>Nom</label>
+  <input id="bName" autocomplete="off" placeholder="Ex. Bahut garage">
+  <div class="row" style="margin-top:14px">
+    <button class="btn" id="bhCancel">Annuler</button>
+    <button class="btn p" id="bhOk">Créer</button>
+  </div>
+</dialog>
+
+<dialog id="dCam">
+  <b>Scanner un code-barres</b>
+  <div id="camBox" style="margin-top:10px"><video id="cam" playsinline muted></video><div id="reader"></div></div>
+  <p class="sub" id="camMsg"></p>
+  <div class="row"><button class="btn" id="cClose">Fermer</button><button class="btn" id="cManual">Saisir le code</button></div>
+</dialog>
+
+<dialog id="dSave">
+  <b>Sauvegarde</b>
+  <p class="sub">Les données restent sur ce téléphone. Copie la sauvegarde pour la garder ou la transférer.</p>
+  <div class="row" style="margin-top:10px">
+    <button class="btn p" id="bFile">Télécharger un fichier</button>
+    <button class="btn" id="bLoad">Charger un fichier</button>
+  </div>
+  <input type="file" id="bPick" accept=".json,application/json" hidden>
+  <p class="sub" id="bLast" style="margin-top:10px"></p>
+  <label>Ou par copier-coller</label>
+  <textarea id="bk" rows="4" style="width:100%;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);padding:8px"></textarea>
+  <div class="row" style="margin-top:10px">
+    <button class="btn" id="bCopy">Copier</button>
+    <button class="btn" id="bRestore">Restaurer</button>
+  </div>
+  <button class="link" id="bClose">Fermer</button>
+</dialog>
+
+<script>
+(function(){
+var KEY='congelos-v1', S={items:[],names:{}}, filter='Tous', view='stock', stockSel=null, hit=null, editId=null, stream=null, timer=null, h5=null;
+try{var r=localStorage.getItem(KEY);if(r)S=JSON.parse(r);}catch(e){}
+function normalize(){
+  S.items=S.items||[];S.names=S.names||{};S.cats=S.cats||{};
+  S.bahuts=(S.bahuts&&S.bahuts.length)?S.bahuts:['Bahut 1','Bahut 2'];
+  S.items.forEach(function(i){if(S.bahuts.indexOf(i.bahut)<0)S.bahuts.push(i.bahut);});
+}
+normalize();
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+function $(i){return document.getElementById(i);}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+function toast(t){var d=document.createElement('div');d.className='toast';d.textContent=t;document.body.appendChild(d);setTimeout(function(){d.remove();},2600);}
+function fmt(n){return Math.round(n*100)/100;}
+function age(d){var m=Math.floor((Date.now()-new Date(d))/2592000000);return m<1?'moins d\u2019un mois':'depuis '+m+' mois';}
+function dlcState(it){if(!it.dlc)return 0;var days=(new Date(it.dlc)-Date.now())/86400000;return days<0?2:days<30?1:0;}
+var PRIO='__prio';
+var CATS=[
+  ['Viande rouge (bœuf, porc, agneau)',6],['Viande hachée',3],['Volaille',9],
+  ['Poisson maigre (cabillaud, sole…)',6],['Poisson gras (saumon, thon…)',3],
+  ['Légumes (blanchis)',12],['Fruits',12],['Plat préparé maison',3],['Soupe, potage',3],
+  ['Pain, viennoiserie',3],['Glace, sorbet',18],['Autre',0]
+];
+var dlcTouched=false;
+function catMonths(n){for(var i=0;i<CATS.length;i++)if(CATS[i][0]===n)return CATS[i][1];return 0;}
+function isoIn(m){var d=new Date();d.setMonth(d.getMonth()+m);var p=function(x){return(x<10?'0':'')+x;};return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());}
+function applyCat(){var m=catMonths($('fCat').value);if(m&&!dlcTouched)$('fDlc').value=isoIn(m);}
+function prioRank(it){
+  if(it.dlc){var days=(new Date(it.dlc)-Date.now())/86400000;if(days<30)return days;}
+  var ageDays=(Date.now()-new Date(it.date))/86400000;
+  if(ageDays>=365)return 100000-ageDays;
+  return null;
+}
+
+var FAM=[
+  {k:'viande',n:'Viandes',c:'--s1'},{k:'legumes',n:'Légumes',c:'--s2'},{k:'plats',n:'Plats & soupes',c:'--s3'},
+  {k:'glaces',n:'Glaces',c:'--s4'},{k:'fruits',n:'Fruits',c:'--s5'},{k:'poissons',n:'Poissons',c:'--s6'},
+  {k:'pain',n:'Pain',c:'--s7'},{k:'autres',n:'Autres',c:'--s8'}
+];
+var CAT2FAM={'Viande rouge (bœuf, porc, agneau)':'viande','Viande hachée':'viande','Volaille':'viande',
+  'Poisson maigre (cabillaud, sole…)':'poissons','Poisson gras (saumon, thon…)':'poissons',
+  'Légumes (blanchis)':'legumes','Fruits':'fruits','Plat préparé maison':'plats','Soupe, potage':'plats',
+  'Pain, viennoiserie':'pain','Glace, sorbet':'glaces'};
+function famOf(it){return CAT2FAM[it.cat]||'autres';}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');}
+function qtyTxt(it){return fmt(it.qty)+' '+it.unit+(it.qty>1&&(it.unit==='paquet'||it.unit==='portion')?'s':'');}
+function setView(v){view=v;if(v==='prio')filter=PRIO;else if(filter===PRIO)filter='Tous';render();}
+
+function renderStock(items){
+  var m=$('list');m.innerHTML='';
+  if(!items.length){m.innerHTML='<div class="empty">'+(S.items.length?'Aucun résultat.':'Aucun produit. Appuie sur Scanner ou Ajouter pour commencer.')+'</div>';return;}
+  var groups={};FAM.forEach(function(g){groups[g.k]=[];});
+  items.forEach(function(i){groups[famOf(i)].push(i);});
+  var fams=FAM.filter(function(g){return groups[g.k].length;}),tot=items.length;
+  if(!stockSel||!groups[stockSel]||!groups[stockSel].length){
+    stockSel=fams.slice().sort(function(a,b){return groups[b.k].length-groups[a.k].length;})[0].k;
+  }
+  var sel=FAM.filter(function(g){return g.k===stockSel;})[0];
+  var R=46,C=2*Math.PI*R,gap=fams.length>1?2:0,cum=0;
+  var svg='<svg viewBox="0 0 120 120" role="img" aria-label="Répartition du stock par catégorie">';
+  fams.forEach(function(g){
+    var len=groups[g.k].length/tot*C,dash=Math.max(len-gap,0.8);
+    svg+='<circle class="seg" data-k="'+g.k+'" cx="60" cy="60" r="'+R+'" fill="none" stroke="var('+g.c+')" stroke-width="'+(g.k===stockSel?20:16)+'" stroke-dasharray="'+dash.toFixed(2)+' '+(C-dash).toFixed(2)+'" stroke-dashoffset="'+(-(cum+gap/2)).toFixed(2)+'" transform="rotate(-90 60 60)"><title>'+g.n+' : '+groups[g.k].length+'</title></circle>';
+    cum+=len;
+  });
+  var pc=Math.round(groups[stockSel].length/tot*100);
+  svg+='<text x="60" y="62" text-anchor="middle" class="cpc">'+pc+' %</text><text x="60" y="75" text-anchor="middle" class="cnm">'+sel.n+'</text></svg>';
+  var leg='';
+  fams.forEach(function(g){var n=groups[g.k].length;leg+='<button class="lg'+(g.k===stockSel?' on':'')+'" data-k="'+g.k+'"><span class="dot" style="background:var('+g.c+')"></span><span>'+g.n+'</span><span class="pc">'+Math.round(n/tot*100)+' %</span></button>';});
+  m.innerHTML='<div class="stock"><div class="donut">'+svg+'<div class="leg">'+leg+'</div></div><div class="detail" id="detail"></div></div>';
+  var dt=$('detail'),rows=groups[stockSel].slice().sort(function(a,b){return a.name.localeCompare(b.name);});
+  var h=document.createElement('h3');h.textContent=sel.n+' · '+rows.length+' produit'+(rows.length>1?'s':'');dt.appendChild(h);
+  rows.forEach(function(it){
+    var r=document.createElement('div');r.className='drow';
+    var top=document.createElement('div');top.className='dtop';
+    var nm=document.createElement('span');nm.className='name';nm.textContent=it.name;
+    var qy=document.createElement('span');qy.className='dq';qy.textContent=qtyTxt(it);
+    top.appendChild(nm);top.appendChild(qy);
+    var mt=document.createElement('div');mt.className='meta';
+    var st=dlcState(it);
+    mt.innerHTML=esc(it.bahut)+(it.slot?' • '+esc(it.slot):'')+(st===2?'<span class="tag b">périmé</span>':st===1?'<span class="tag w">bientôt</span>':'');
+    r.appendChild(top);r.appendChild(mt);
+    r.onclick=function(){openAdd(it);};
+    dt.appendChild(r);
+  });
+  var ks=m.querySelectorAll('[data-k]');
+  for(var i=0;i<ks.length;i++){ks[i].onclick=function(){stockSel=this.getAttribute('data-k');render();};}
+}
+
+function render(){
+  var tabs=$('tabs');tabs.innerHTML='';
+  [['stock','En stock'],['prio','À consommer en priorité'],['bahut','Congélateurs']].forEach(function(t){
+    var x=document.createElement('button');x.className='tab'+(t[0]===view?' on':'');
+    var n=t[0]==='prio'?S.items.filter(function(i){return prioRank(i)!==null;}).length:0;
+    x.textContent=t[1]+(n?' ('+n+')':'');
+    x.onclick=function(){setView(t[0]);};tabs.appendChild(x);
+  });
+  var bahuts=['Tous'].concat(S.bahuts),c=$('chips'),mg=$('manage');c.innerHTML='';mg.innerHTML='';
+  c.style.display=mg.style.display=(view==='bahut')?'':'none';
+  if(filter!==PRIO&&bahuts.indexOf(filter)<0)filter='Tous';
+  bahuts.forEach(function(b){var x=document.createElement('button');x.className='chip'+(b===filter?' on':'');x.textContent=b;x.onclick=function(){filter=b;render();};c.appendChild(x);});
+  var plus=document.createElement('button');plus.className='chip';plus.textContent='+ Congélateur';plus.onclick=function(){openBahut(false);};c.appendChild(plus);
+  if(view==='bahut'&&S.bahuts.indexOf(filter)>=0){
+    var rn=document.createElement('button');rn.className='link';rn.textContent='Renommer « '+filter+' »';rn.onclick=function(){openBahut(true);};mg.appendChild(rn);
+    if(S.bahuts.length>1){var dl=document.createElement('button');dl.className='link';dl.textContent='Supprimer';dl.onclick=openDel;mg.appendChild(dl);}
+  }
+  var q=$('q').value.trim().toLowerCase();
+  var matchQ=function(i){return !q||i.name.toLowerCase().indexOf(q)>-1;};
+  var late=S.items.length&&(!S.lastBackup||Date.now()-S.lastBackup>30*86400000);
+  $('sum').textContent=S.items.length+' produit'+(S.items.length>1?'s':'')+' en stock'+(late?' \u2022 pense à faire une sauvegarde':'');
+  if(view==='stock'){renderStock(S.items.filter(matchQ));return;}
+  var list=S.items.filter(function(i){return(filter==='Tous'||i.bahut===filter||(filter===PRIO&&prioRank(i)!==null))&&matchQ(i);});
+  var m=$('list');m.innerHTML='';
+  if(!list.length){m.innerHTML='<div class="empty">'+(filter===PRIO&&!q?'Rien d’urgent : aucun produit proche de sa date ni en stock depuis plus de 12 mois.':S.items.length?'Aucun résultat.':'Aucun produit. Appuie sur Scanner ou Ajouter pour commencer.')+'</div>';return;}
+  if(filter===PRIO){
+    $('list').innerHTML='<div class="zone">Produits proches de leur date, puis les plus anciens</div>';
+    list.sort(function(a,b){return prioRank(a)-prioRank(b);});
+  }else list.sort(function(a,b){return a.bahut.localeCompare(b.bahut)||a.name.localeCompare(b.name);});
+  var last='';
+  list.forEach(function(it){
+    if(filter!==PRIO&&it.bahut!==last){last=it.bahut;var z=document.createElement('div');z.className='zone';z.textContent=last;m.appendChild(z);}
+    var d=document.createElement('div');d.className='item'+(it.id===hit?' hit':'');
+    var st=dlcState(it),tag=st===2?'<span class="tag b">périmé</span>':st===1?'<span class="tag w">à consommer bientôt</span>':'';
+    var info=document.createElement('div');info.className='info';
+    info.innerHTML='<div class="name"></div><div class="meta"></div>';
+    info.firstChild.textContent=it.name;
+    info.lastChild.innerHTML=(filter===PRIO?it.bahut.replace(/</g,'&lt;')+' • ':'')+(it.slot?it.slot.replace(/</g,'&lt;')+' \u2022 ':'')+age(it.date)+tag;
+    info.onclick=function(){openAdd(it);};
+    var q2=document.createElement('div');q2.className='qty';
+    var mi=document.createElement('button');mi.textContent='\u2212';mi.setAttribute('aria-label','Sortir un');
+    var sp=document.createElement('span');sp.textContent=fmt(it.qty)+' '+it.unit+(it.qty>1&&it.unit==='paquet'?'s':it.qty>1&&it.unit==='portion'?'s':'');
+    var pl=document.createElement('button');pl.textContent='+';pl.setAttribute('aria-label','Ajouter un');
+    var step=(it.unit==='g')?100:(it.unit==='kg')?0.5:1;
+    mi.onclick=function(){it.qty=Math.max(0,it.qty-step);if(it.qty<=0){S.items=S.items.filter(function(x){return x.id!==it.id;});toast(it.name+' retiré du stock');}hit=null;save();render();};
+    pl.onclick=function(){it.qty+=step;save();render();};
+    q2.appendChild(mi);q2.appendChild(sp);q2.appendChild(pl);
+    d.appendChild(info);d.appendChild(q2);m.appendChild(d);
+  });
+}
+
+function openAdd(it,code){
+  editId=it?it.id:null;
+  $('dTitle').textContent=it?'Modifier le produit':'Ajouter un produit';
+  $('fCode').value=it?it.code||'':code||'';
+  $('fName').value=it?it.name:(code&&S.names[code]||'');
+  $('fBahut').innerHTML='';
+  S.bahuts.forEach(function(b){var o=document.createElement('option');o.textContent=b;$('fBahut').appendChild(o);});
+  $('fBahut').value=it?it.bahut:(S.bahuts.indexOf(filter)>=0?filter:S.bahuts[0]);
+  $('fSlot').value=it?it.slot||'':'';
+  $('fQty').value=it?it.qty:1;
+  $('fUnit').value=it?it.unit:'paquet';
+  $('fDlc').value=it?it.dlc||'':'';
+  var cs=$('fCat');cs.innerHTML='<option value="">Choisir une catégorie</option>';
+  CATS.forEach(function(c){var o=document.createElement('option');o.value=c[0];o.textContent=c[1]?c[0]+' – '+c[1]+' mois':c[0];cs.appendChild(o);});
+  cs.value=it?it.cat||'':(code&&S.cats[code])||'';
+  dlcTouched=!!it;
+  if(!it)applyCat();
+  if(!$('dAdd').open)$('dAdd').showModal();
+}
+$('fCat').addEventListener('change',applyCat);
+$('fDlc').addEventListener('input',function(){dlcTouched=true;});
+$('fCode').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();var c=this.value.trim();if(c&&S.names[c]&&!$('fName').value)$('fName').value=S.names[c];$('fName').focus();}});
+$('fCode').addEventListener('change',function(){var c=this.value.trim();if(c&&S.names[c]&&!$('fName').value)$('fName').value=S.names[c];});
+$('fCancel').onclick=function(){$('dAdd').close();};
+$('fOk').onclick=function(){
+  var name=$('fName').value.trim();if(!name){toast('Indique le nom du produit');return;}
+  var code=$('fCode').value.trim(),qty=parseFloat($('fQty').value);if(!(qty>0)){toast('Indique une quantité');return;}
+  var o={code:code,name:name,bahut:$('fBahut').value,slot:$('fSlot').value.trim(),qty:qty,unit:$('fUnit').value,dlc:$('fDlc').value,cat:$('fCat').value};
+  if(code){S.names[code]=name;if(o.cat)S.cats[code]=o.cat;}
+  if(editId){S.items.forEach(function(i){if(i.id===editId)Object.assign(i,o);});}
+  else{
+    var same=S.items.filter(function(i){return i.name.toLowerCase()===name.toLowerCase()&&i.bahut===o.bahut&&i.unit===o.unit&&(i.slot||'')===o.slot;})[0];
+    if(same){same.qty+=qty;if(o.dlc)same.dlc=o.dlc;}else{o.id=uid();o.date=new Date().toISOString().slice(0,10);S.items.push(o);}
+  }
+  save();$('dAdd').close();hit=null;render();
+};
+
+function handleCode(code){
+  var it=S.items.filter(function(i){return i.code===code;})[0];
+  if(it){hit=it.id;view='bahut';filter='Tous';$('q').value='';render();toast('Trouvé : '+it.name+'. Utilise \u2212 pour en sortir');var el=document.querySelector('.item.hit');if(el)el.scrollIntoView({block:'center'});}
+  else openAdd(null,code);
+}
+function stopCam(){
+  if(timer){clearInterval(timer);timer=null;}
+  if(stream){stream.getTracks().forEach(function(t){t.stop();});stream=null;}
+  if(h5){try{h5.stop().catch(function(){});}catch(e){}h5=null;}
+  if($('dCam').open)$('dCam').close();
+}
+function found(code){stopCam();handleCode(code);}
+async function startScan(){
+  $('dCam').showModal();$('camMsg').textContent='Place le code-barres devant la caméra.';
+  $('cam').style.display='none';$('reader').innerHTML='';
+  try{
+    if('BarcodeDetector' in window){
+      $('cam').style.display='block';
+      var det=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e','code_128','qr_code']});
+      stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+      var v=$('cam');v.srcObject=stream;await v.play();
+      timer=setInterval(async function(){try{var r=await det.detect(v);if(r.length)found(r[0].rawValue);}catch(e){}},300);
+    }else{
+      await new Promise(function(ok,ko){var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js';s.onload=ok;s.onerror=ko;document.head.appendChild(s);});
+      h5=new Html5Qrcode('reader');
+      await h5.start({facingMode:'environment'},{fps:10,qrbox:{width:250,height:140}},function(t){found(t);});
+    }
+  }catch(e){$('camMsg').textContent='Caméra indisponible. Autorise l\u2019accès à la caméra ou saisis le code à la main.';}
+}
+var renaming=false;
+function openBahut(rename){
+  renaming=!!rename;
+  $('bhTitle').textContent=renaming?'Renommer le congélateur':'Nouveau congélateur';
+  $('bhOk').textContent=renaming?'Renommer':'Créer';
+  $('bName').value=renaming?filter:'Bahut '+(S.bahuts.length+1);
+  $('dBahut').showModal();setTimeout(function(){$('bName').select();},50);
+}
+function createBahut(){
+  var n=$('bName').value.trim();if(!n){toast('Indique un nom');return;}
+  if(S.bahuts.some(function(b){return b.toLowerCase()===n.toLowerCase()&&!(renaming&&b===filter);})){toast('Ce congélateur existe déjà');return;}
+  if(renaming){
+    var old=filter;
+    S.bahuts=S.bahuts.map(function(b){return b===old?n:b;});
+    S.items.forEach(function(i){if(i.bahut===old)i.bahut=n;});
+    filter=n;save();$('dBahut').close();render();toast('Renommé en '+n);return;
+  }
+  S.bahuts.push(n);filter=n;save();$('dBahut').close();render();toast(n+' ajouté');
+}
+function openDel(){
+  var n=S.items.filter(function(i){return i.bahut===filter;}).length;
+  $('delTitle').textContent='Supprimer « '+filter+' »';
+  var mv=$('delMove');mv.innerHTML='';
+  if(n){
+    $('delMsg').textContent=n+' produit'+(n>1?'s':'')+' dans ce congélateur.';
+    $('delMoveBox').style.display='block';
+    S.bahuts.filter(function(b){return b!==filter;}).forEach(function(b){var o=document.createElement('option');o.value=b;o.textContent='Les déplacer vers '+b;mv.appendChild(o);});
+    var x=document.createElement('option');x.value='';x.textContent='Les supprimer aussi';mv.appendChild(x);
+  }else{
+    $('delMsg').textContent='Ce congélateur est vide.';
+    $('delMoveBox').style.display='none';
+  }
+  $('dDel').showModal();
+}
+$('delCancel').onclick=function(){$('dDel').close();};
+$('delOk').onclick=function(){
+  var old=filter,dest=$('delMove').value;
+  if(dest){S.items.forEach(function(i){if(i.bahut===old)i.bahut=dest;});}
+  else{S.items=S.items.filter(function(i){return i.bahut!==old;});}
+  S.bahuts=S.bahuts.filter(function(b){return b!==old;});
+  filter=dest||'Tous';save();$('dDel').close();render();toast(old+' supprimé');
+};
+$('bhOk').onclick=createBahut;
+$('bhCancel').onclick=function(){$('dBahut').close();};
+$('bName').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();createBahut();}});
+$('bScan').onclick=startScan;
+$('cClose').onclick=stopCam;
+$('cManual').onclick=function(){stopCam();openAdd(null,'');setTimeout(function(){$('fCode').focus();},50);};
+$('bAdd').onclick=function(){openAdd(null,'');};
+$('q').oninput=render;
+
+function lastTxt(){return S.lastBackup?'Dernière sauvegarde en fichier : '+new Date(S.lastBackup).toLocaleDateString('fr-FR')+'.':'Aucune sauvegarde en fichier pour l\u2019instant.';}
+$('bSave').onclick=function(){$('bk').value=JSON.stringify(S);$('bLast').textContent=lastTxt();$('dSave').showModal();};
+$('bFile').onclick=function(){
+  S.lastBackup=Date.now();save();
+  var d=new Date(),p=function(x){return(x<10?'0':'')+x;};
+  var name='congelos-'+d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'.json';
+  var blob=new Blob([JSON.stringify(S)],{type:'application/json'}),a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();
+  setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},1000);
+  $('bk').value=JSON.stringify(S);$('bLast').textContent=lastTxt();render();toast('Fichier '+name+' téléchargé');
+};
+$('bLoad').onclick=function(){$('bPick').click();};
+$('bPick').onchange=function(){
+  var f=this.files[0];if(!f)return;var rd=new FileReader();
+  rd.onload=function(){$('bk').value=rd.result;$('bRestore').click();};
+  rd.readAsText(f);this.value='';
+};
+$('bClose').onclick=function(){$('dSave').close();};
+$('bCopy').onclick=function(){$('bk').select();try{navigator.clipboard.writeText($('bk').value).then(function(){toast('Sauvegarde copiée');});}catch(e){document.execCommand('copy');toast('Sauvegarde copiée');}};
+$('bRestore').onclick=function(){
+  try{var d=JSON.parse($('bk').value);if(!d.items)throw 0;if(!confirm('Remplacer le stock actuel par cette sauvegarde ?'))return;S={items:d.items,names:d.names||{},cats:d.cats||{},bahuts:d.bahuts,lastBackup:d.lastBackup};normalize();save();$('dSave').close();render();toast('Sauvegarde restaurée');}
+  catch(e){toast('Sauvegarde invalide');}
+};
+render();
+if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});}
+try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();}catch(e){}
+})();
+</script>
+</body>
+</html>
