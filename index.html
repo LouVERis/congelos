@@ -68,6 +68,10 @@ label{display:block;font-size:13px;color:var(--mut);margin:10px 0 4px}
 .dtop .name{font-size:14px;min-width:0}
 .dq{font-size:13px;font-weight:700;white-space:nowrap}
 .drow .meta{font-size:12px}
+.hrow{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.hrow .chip{margin-top:4px}
+.chip.shared{border-color:var(--acc);color:var(--acc);font-weight:700}
+#shOn{display:none}
 .manage{display:flex;gap:16px;margin-top:6px}
 .manage .link{padding:6px 0;margin:0}
 .link{background:none;border:none;color:var(--mut);text-decoration:underline;padding:8px;cursor:pointer}
@@ -75,7 +79,7 @@ label{display:block;font-size:13px;color:var(--mut);margin:10px 0 4px}
 </head>
 <body>
 <header>
-  <h1>Mes congélos</h1>
+  <div class="hrow"><h1>Mes congélos</h1><button class="chip" id="bShare">Partager</button></div>
   <div class="tabs" id="tabs"></div>
   <p class="sub" id="sum"></p>
   <input id="q" type="search" placeholder="Chercher un produit">
@@ -143,6 +147,26 @@ label{display:block;font-size:13px;color:var(--mut);margin:10px 0 4px}
   <div class="row"><button class="btn" id="cClose">Fermer</button><button class="btn" id="cManual">Saisir le code</button></div>
 </dialog>
 
+<dialog id="dShare">
+  <b>Partager le stock</b>
+  <div id="shOff">
+    <p class="sub" style="margin-top:10px">Le stock est enregistré en ligne et synchronisé entre vos téléphones, même après une coupure de réseau.</p>
+    <button class="btn p" id="shCreate" style="width:100%">Créer le stock partagé</button>
+    <label>Déjà un code ou un lien ?</label>
+    <input id="shJoinCode" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Colle le code ou le lien">
+    <button class="btn" id="shJoin" style="width:100%;margin-top:8px">Rejoindre</button>
+  </div>
+  <div id="shOn">
+    <p class="sub" style="margin-top:10px" id="shStatus"></p>
+    <label>Lien à envoyer à l’autre téléphone</label>
+    <input id="shLink" readonly>
+    <div class="row" style="margin-top:8px"><button class="btn p" id="shSend">Envoyer</button><button class="btn" id="shCopy">Copier</button></div>
+    <p class="sub" style="margin-top:10px">Ce lien donne accès au stock : ne l’envoie qu’aux personnes concernées.</p>
+    <button class="link" id="shLeave">Quitter le partage</button>
+  </div>
+  <button class="link" id="shClose">Fermer</button>
+</dialog>
+
 <dialog id="dSave">
   <b>Sauvegarde</b>
   <p class="sub">Les données restent sur ce téléphone. Copie la sauvegarde pour la garder ou la transférer.</p>
@@ -161,6 +185,12 @@ label{display:block;font-size:13px;color:var(--mut);margin:10px 0 4px}
   <button class="link" id="bClose">Fermer</button>
 </dialog>
 
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import {initializeFirestore,persistentLocalCache,persistentMultipleTabManager,doc,collection,setDoc,deleteDoc,onSnapshot} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+window.FB={initializeApp:initializeApp,initializeFirestore:initializeFirestore,persistentLocalCache:persistentLocalCache,persistentMultipleTabManager:persistentMultipleTabManager,doc:doc,collection:collection,setDoc:setDoc,deleteDoc:deleteDoc,onSnapshot:onSnapshot};
+window.dispatchEvent(new Event('fb-ready'));
+</script>
 <script>
 (function(){
 var KEY='congelos-v1', S={items:[],names:{}}, filter='Tous', view='stock', stockSel=null, hit=null, editId=null, stream=null, timer=null, h5=null;
@@ -171,7 +201,130 @@ function normalize(){
   S.items.forEach(function(i){if(S.bahuts.indexOf(i.bahut)<0)S.bahuts.push(i.bahut);});
 }
 normalize();
-function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+function localSave(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+function save(){localSave();pushDiff();}
+
+/* ===== Stock partagé (Firebase Firestore) ===== */
+var FBC={apiKey:"AIzaSyCdHsWExODN-ugw353PMQ3R6rzB2fDJ-9k",authDomain:"congelos-8a6f6.firebaseapp.com",projectId:"congelos-8a6f6",storageBucket:"congelos-8a6f6.firebasestorage.app",messagingSenderId:"280353650044",appId:"1:280353650044:web:e2970d6046d3219557e0f9"};
+var HKEY='congelos-house',SAFEKEY='congelos-avant-partage';
+var house='',fdb=null,unsubs=[],remote=null,lastPushed=null,syncMsg='',joining=false;
+function getHouse(){try{return localStorage.getItem(HKEY)||'';}catch(e){return '';}}
+function setHouse(c){try{if(c)localStorage.setItem(HKEY,c);else localStorage.removeItem(HKEY);}catch(e){}}
+function validCode(c){return /^[A-Za-z0-9]{8,64}$/.test(c||'');}
+function newCode(){var a='abcdefghjkmnpqrstuvwxyz23456789',o='';while(o.length<10){var b=new Uint8Array(16);window.crypto.getRandomValues(b);for(var i=0;i<16&&o.length<10;i++){if(b[i]<248)o+=a[b[i]%31];}}return o;}
+function canon(v){
+  if(v&&typeof v==='object'){
+    if(Array.isArray(v))return '['+v.map(canon).join(',')+']';
+    return '{'+Object.keys(v).filter(function(k){return v[k]!==undefined;}).sort().map(function(k){return JSON.stringify(k)+':'+canon(v[k]);}).join(',')+'}';
+  }
+  return JSON.stringify(v);
+}
+function keysNow(){
+  var o={items:{},meta:canon({bahuts:S.bahuts,names:S.names,cats:S.cats})};
+  S.items.forEach(function(i){o.items[i.id]=canon(i);});
+  return o;
+}
+function onSyncErr(e){syncMsg=(e&&e.code==='permission-denied')?'accès refusé':'erreur de synchro';render();}
+function pushDiff(){
+  if(!window.FB||!house||!fdb||lastPushed===null)return;
+  var cur=keysNow(),last=lastPushed;
+  Object.keys(cur.items).forEach(function(id){
+    if(last.items[id]!==cur.items[id])FB.setDoc(FB.doc(fdb,'foyers',house,'items',id),JSON.parse(cur.items[id])).catch(onSyncErr);
+  });
+  Object.keys(last.items).forEach(function(id){
+    if(!(id in cur.items))FB.deleteDoc(FB.doc(fdb,'foyers',house,'items',id)).catch(onSyncErr);
+  });
+  if(cur.meta!==last.meta)FB.setDoc(FB.doc(fdb,'foyers',house,'meta','main'),JSON.parse(cur.meta)).catch(onSyncErr);
+  lastPushed=cur;
+}
+function stopSync(keepCode){
+  unsubs.forEach(function(u){try{u();}catch(e){}});unsubs=[];
+  lastPushed=null;remote=null;
+  if(!keepCode){house='';setHouse('');syncMsg='';joining=false;}
+}
+function applyRemote(){
+  if(!remote||!remote.gi||!remote.gm)return;
+  var empty=!remote.meta&&!Object.keys(remote.items).length;
+  if(joining&&empty){
+    if(remote.si&&remote.sm){
+      toast('Code inconnu : aucun stock partagé trouvé');
+      stopSync(false);
+      try{var sv=localStorage.getItem(SAFEKEY);if(sv){S=JSON.parse(sv);normalize();localSave();}}catch(e){}
+      render();
+    }
+    return;
+  }
+  var arr=[];
+  Object.keys(remote.items).forEach(function(k){var o=remote.items[k];o.id=k;arr.push(o);});
+  S.items=arr;
+  if(remote.meta){
+    if(remote.meta.bahuts&&remote.meta.bahuts.length)S.bahuts=remote.meta.bahuts;
+    S.names=remote.meta.names||{};S.cats=remote.meta.cats||{};
+  }
+  normalize();
+  lastPushed=keysNow();
+  joining=false;syncMsg='';
+  localSave();render();
+}
+/* mode : 'create' (envoie tout), 'merge' (envoie les produits de ce téléphone), 'join' (rejoint sans rien envoyer), 'resume' (reprise au démarrage) */
+function startSync(code,mode){
+  if(!window.FB||!validCode(code))return false;
+  stopSync(true);
+  house=code;setHouse(code);syncMsg='';joining=(mode==='join');
+  try{
+    if(!fdb){
+      var app=FB.initializeApp(FBC);
+      try{fdb=FB.initializeFirestore(app,{localCache:FB.persistentLocalCache({tabManager:FB.persistentMultipleTabManager()})});}
+      catch(e){fdb=FB.initializeFirestore(app,{});}
+    }
+  }catch(e){house='';setHouse('');syncMsg='';toast('Synchronisation impossible');return false;}
+  remote={items:{},meta:null,gi:false,gm:false,si:false,sm:false};
+  if(mode==='create'||mode==='merge'){
+    lastPushed={items:{},meta:(mode==='merge')?keysNow().meta:''};
+    pushDiff();
+  }
+  unsubs.push(FB.onSnapshot(FB.collection(fdb,'foyers',code,'items'),function(snap){
+    var m={};snap.forEach(function(d){m[d.id]=d.data();});
+    remote.items=m;remote.gi=true;if(!snap.metadata.fromCache)remote.si=true;applyRemote();
+  },onSyncErr));
+  unsubs.push(FB.onSnapshot(FB.doc(fdb,'foyers',code,'meta','main'),function(d){
+    remote.meta=d.exists()?d.data():null;remote.gm=true;if(!d.metadata.fromCache)remote.sm=true;applyRemote();
+  },onSyncErr));
+  return true;
+}
+function safetyCopy(){try{localStorage.setItem(SAFEKEY,JSON.stringify(S));}catch(e){}}
+function joinFlow(code){
+  if(!window.FB){toast('Synchronisation indisponible pour le moment. Réessaie avec du réseau.');return;}
+  if(!validCode(code)){toast('Code invalide');return;}
+  var mode='join';
+  if(S.items.length){
+    if(confirm('Ajouter les '+S.items.length+' produits de ce téléphone au stock partagé ?\n\nOK = les ajouter\nAnnuler = les remplacer par le stock partagé'))mode='merge';
+  }
+  safetyCopy();
+  if(startSync(code,mode)){toast('Connexion au stock partagé…');refreshShare();}
+}
+function checkHash(){
+  var m=(location.hash||'').match(/^#f=([A-Za-z0-9]{8,64})$/);if(!m)return;
+  var c=m[1];
+  try{history.replaceState(null,'',location.pathname+location.search);}catch(e){}
+  if(c===house)return;
+  setTimeout(function(){if(confirm('Rejoindre le stock partagé de ce lien ?'))joinFlow(c);},300);
+}
+function initSync(){
+  if(initSync.done)return;initSync.done=true;
+  var c=getHouse();if(validCode(c))startSync(c,'resume');
+  checkHash();render();
+}
+function shareLink(){return location.origin+location.pathname+'#f='+house;}
+function refreshShare(){
+  var on=!!house;
+  $('shOff').style.display=on?'none':'block';$('shOn').style.display=on?'block':'none';
+  if(on){
+    $('shLink').value=shareLink();
+    $('shStatus').textContent='Ce téléphone est connecté au stock partagé'+(syncMsg?' ('+syncMsg+')':'')+(navigator.onLine===false?' — hors ligne, la synchro reprendra avec le réseau':'')+'.';
+  }
+}
+
 function $(i){return document.getElementById(i);}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
 function toast(t){var d=document.createElement('div');d.className='toast';d.textContent=t;document.body.appendChild(d);setTimeout(function(){d.remove();},2600);}
@@ -271,7 +424,8 @@ function render(){
   var q=$('q').value.trim().toLowerCase();
   var matchQ=function(i){return !q||i.name.toLowerCase().indexOf(q)>-1;};
   var late=S.items.length&&(!S.lastBackup||Date.now()-S.lastBackup>30*86400000);
-  $('sum').textContent=S.items.length+' produit'+(S.items.length>1?'s':'')+' en stock'+(late?' \u2022 pense à faire une sauvegarde':'');
+  $('sum').textContent=S.items.length+' produit'+(S.items.length>1?'s':'')+' en stock'+(late?' \u2022 pense à faire une sauvegarde':'')+(house?' \u2022 partagé'+(syncMsg?' ('+syncMsg+')':(navigator.onLine===false?' (hors ligne)':'')):'');
+  var sb=$('bShare');if(sb){sb.textContent=house?'Partagé ✓':'Partager';sb.className='chip'+(house?' shared':'');}
   if(view==='stock'){renderStock(S.items.filter(matchQ));return;}
   var list=S.items.filter(function(i){return(filter==='Tous'||i.bahut===filter||(filter===PRIO&&prioRank(i)!==null))&&matchQ(i);});
   var m=$('list');m.innerHTML='';
@@ -439,12 +593,40 @@ $('bPick').onchange=function(){
 $('bClose').onclick=function(){$('dSave').close();};
 $('bCopy').onclick=function(){$('bk').select();try{navigator.clipboard.writeText($('bk').value).then(function(){toast('Sauvegarde copiée');});}catch(e){document.execCommand('copy');toast('Sauvegarde copiée');}};
 $('bRestore').onclick=function(){
-  try{var d=JSON.parse($('bk').value);if(!d.items)throw 0;if(!confirm('Remplacer le stock actuel par cette sauvegarde ?'))return;S={items:d.items,names:d.names||{},cats:d.cats||{},bahuts:d.bahuts,lastBackup:d.lastBackup};normalize();save();$('dSave').close();render();toast('Sauvegarde restaurée');}
+  try{var d=JSON.parse($('bk').value);if(!d.items)throw 0;if(!confirm(house?'Attention : le stock est partagé, cela remplacera aussi le stock de l\u2019autre téléphone. Continuer ?':'Remplacer le stock actuel par cette sauvegarde ?'))return;S={items:d.items,names:d.names||{},cats:d.cats||{},bahuts:d.bahuts,lastBackup:d.lastBackup};normalize();save();$('dSave').close();render();toast('Sauvegarde restaurée');}
   catch(e){toast('Sauvegarde invalide');}
 };
 render();
 if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});}
 try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();}catch(e){}
+$('bShare').onclick=function(){refreshShare();$('shJoinCode').value='';$('dShare').showModal();};
+$('shClose').onclick=function(){$('dShare').close();};
+$('shCreate').onclick=function(){
+  if(!window.FB){toast('Synchronisation indisponible pour le moment. Réessaie avec du réseau.');return;}
+  safetyCopy();
+  if(startSync(newCode(),'create')){refreshShare();toast('Stock partagé créé');}
+};
+$('shJoin').onclick=function(){
+  var v=$('shJoinCode').value.trim(),m=v.match(/f=([A-Za-z0-9]+)/);if(m)v=m[1];
+  v=v.toLowerCase();
+  $('dShare').close();joinFlow(v);
+};
+$('shCopy').onclick=function(){
+  try{navigator.clipboard.writeText(shareLink()).then(function(){toast('Lien copié');},function(){$('shLink').select();document.execCommand('copy');toast('Lien copié');});}
+  catch(e){$('shLink').select();document.execCommand('copy');toast('Lien copié');}
+};
+$('shSend').onclick=function(){
+  if(navigator.share){navigator.share({title:'Mes congélos',text:'Rejoins notre stock de congélateurs',url:shareLink()}).catch(function(){});}
+  else $('shCopy').click();
+};
+$('shLeave').onclick=function(){
+  if(!confirm('Quitter le stock partagé ?\n\nCe téléphone garde une copie du stock actuel mais ne sera plus synchronisé.'))return;
+  stopSync(false);$('dShare').close();render();toast('Partage quitté');
+};
+window.addEventListener('fb-ready',initSync);
+window.addEventListener('online',function(){render();});
+window.addEventListener('offline',function(){render();});
+if(window.FB)initSync();
 })();
 </script>
 </body>

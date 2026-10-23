@@ -1,9 +1,21 @@
 // Change ce numéro à chaque mise à jour pour forcer le rafraîchissement du cache.
-var CACHE = 'congelos-v1';
+var CACHE = 'congelos-v3';
 var FILES = ['./', 'index.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png', 'favicon.png'];
+// Bibliothèque Firebase (Google), gardée en cache pour que l'appli démarre sans réseau.
+var CDN = [
+  'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js',
+  'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js'
+];
 
 self.addEventListener('install', function (e) {
-  e.waitUntil(caches.open(CACHE).then(function (c) { return c.addAll(FILES); }).then(function () { return self.skipWaiting(); }));
+  e.waitUntil(
+    caches.open(CACHE).then(function (c) {
+      var cdn = CDN.map(function (u) {
+        return fetch(u, { mode: 'cors' }).then(function (r) { if (r.ok) return c.put(u, r); }).catch(function () {});
+      });
+      return Promise.all([c.addAll(FILES)].concat(cdn));
+    }).then(function () { return self.skipWaiting(); })
+  );
 });
 
 self.addEventListener('activate', function (e) {
@@ -14,10 +26,22 @@ self.addEventListener('activate', function (e) {
   );
 });
 
-// Réseau d'abord (pour avoir la dernière version), cache en secours hors ligne.
 self.addEventListener('fetch', function (e) {
   var req = e.request;
-  if (req.method !== 'GET' || new URL(req.url).origin !== location.origin) return;
+  if (req.method !== 'GET') return;
+  // Firebase : le cache d'abord (fichiers figés par version), sinon le réseau.
+  if (CDN.indexOf(req.url) > -1) {
+    e.respondWith(caches.match(req.url).then(function (r) {
+      return r || fetch(req).then(function (res) {
+        var copy = res.clone();
+        caches.open(CACHE).then(function (c) { c.put(req.url, copy); });
+        return res;
+      });
+    }));
+    return;
+  }
+  if (new URL(req.url).origin !== location.origin) return;
+  // Notre application : le réseau d'abord (dernière version), le cache en secours hors ligne.
   e.respondWith(
     fetch(req).then(function (res) {
       var copy = res.clone();
